@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+    <jms:connector name="EMSConnection" specification="1.1" username="mule" password="mule" validateConnections="true" jndiInitialFactory="com.tibco.tibjms.naming.TibjmsInitialContextFactory" jndiProviderUrl="tcp://localhost:7222" connectionFactoryJndiName="QueueConnectionFactory" doc:name="JMS"/>
+    <flow name="emsQueueSenderFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/emsqueue" allowedMethods="GET" doc:name="HTTP"/>
+        <set-payload value="sending message to ems queue" doc:name="Set Request Payload"/>
+        <jms:outbound-endpoint exchange-pattern="request-response" queue="sample.mule.queue" connector-ref="EMSConnection" doc:name="EMSQueueSender"/>
+    </flow>
+    <flow name="emsQueueReceiverFlow">
+        <jms:inbound-endpoint queue="sample.mule.queue" connector-ref="EMSConnection" doc:name="EMSQueueReceiver"/>
+        <logger message="Original payload sent : #[payload]" level="INFO" doc:name="Logger"/>
+        <set-payload value="message received on queue" doc:name="Set Reply Payload"/>
+        <logger message="Reply payload is : #[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    
+        <flow name="emsTopicPublisherFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/emstopic" allowedMethods="GET" doc:name="HTTP"/>
+        <set-payload value="sending message to ems topic" doc:name="Set Request Payload"/>
+        <jms:outbound-endpoint exchange-pattern="request-response"  connector-ref="EMSConnection" doc:name="EMSTopicPublisher" topic="sample.mule.topic"/>
+    </flow>
+    <flow name="emsTopicSubscriberFlow">
+        <jms:inbound-endpoint  connector-ref="EMSConnection" doc:name="EMSTopicSubscriber" topic="sample.mule.topic"/>
+        <logger message="Original payload sent : #[payload]" level="INFO" doc:name="Logger"/>
+        <set-payload value="message received on topic" doc:name="Set Reply Payload"/>
+        <logger message="Reply payload is : #[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
